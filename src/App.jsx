@@ -3,15 +3,14 @@ import { recipes } from "./data/recipes";
 import RecipeCard from "./components/Recipe/RecipeCard";
 import FavoritesSection from "./components/Recipe/Favorites/FavoritesSection";
 import SearchBar from "./components/SearchBar";
-
 import "./App.css";
 
 function App() {
   const [favorites, setFavorites] = useState([]);
   const [search, setSearch] = useState("");
   const [isDescending, setIsDescending] = useState(true);
+  const [difficulty, setDifficulty] = useState("All");
 
-  // --- Logic: Toggle Favorites ---
   const toggleFavorite = (recipe) => {
     if (favorites.find((fav) => fav.id === recipe.id)) {
       setFavorites(favorites.filter((fav) => fav.id !== recipe.id));
@@ -20,58 +19,69 @@ function App() {
     }
   };
 
-  // --- Logic: Filter & Sort All Recipes ---
   const filteredRecipes = recipes
-    .filter((r) => r.name.toLowerCase().includes(search.toLowerCase()))
+    .filter((recipe) =>
+      recipe.name.toLowerCase().includes(search.toLowerCase())
+    )
+    .filter((recipe) =>
+      difficulty === "All" ? true : recipe.difficulty === difficulty
+    )
     .sort((a, b) => {
-      const dateA = new Date(a.createdAt);
-      const dateB = new Date(b.createdAt);
+      const dateA = new Date(a.create_date);
+      const dateB = new Date(b.create_date);
       return isDescending ? dateB - dateA : dateA - dateB;
     });
 
-  // --- Logic: Top Rated Section (3 recipes with 5 stars) ---
   const topRatedRecipes = recipes
-    .filter((r) => r.rating === 5)
+    .filter((recipe) => recipe.rating === 5)
     .slice(0, 3);
 
   return (
     <div className="App">
       <header className="app-header">
         <h1>Recipe App</h1>
-        
+
         <div className="controls">
-          <input 
-            type="text" 
-            placeholder="Search recipes..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="search-input"
-          />
-          <button onClick={() => setIsDescending(!isDescending)} className="sort-btn">
+          <SearchBar search={search} setSearch={setSearch} />
+
+          <select
+            value={difficulty}
+            onChange={(e) => setDifficulty(e.target.value)}
+            className="difficulty-filter"
+          >
+            <option value="All">All</option>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+
+          <button
+            onClick={() => setIsDescending(!isDescending)}
+            className="sort-btn"
+          >
             Sort by: {isDescending ? "Newest First ⬇️" : "Oldest First ⬆️"}
           </button>
         </div>
       </header>
 
       <main>
-        {/* Section 1: Favorites (Checks off the "Empty State" requirement) */}
-        <FavoritesSection 
-          favorites={favorites} 
-          onToggleFavorite={toggleFavorite} 
+        <FavoritesSection
+          favorites={favorites}
+          toggleFavorite={toggleFavorite}
         />
 
         <hr />
 
-        {/* Section 2: Top Rated (Checks off "Top Rated section" requirement) */}
         <section className="top-rated-section">
           <h2>Top Rated ⭐️</h2>
+
           <div className="recipe-grid">
             {topRatedRecipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
-                {...recipe}
+                recipe={recipe}
+                toggleFavorite={toggleFavorite}
                 isFavorite={favorites.some((fav) => fav.id === recipe.id)}
-                onFavoriteClick={() => toggleFavorite(recipe)}
               />
             ))}
           </div>
@@ -79,9 +89,9 @@ function App() {
 
         <hr />
 
-        {/* Section 3: All Recipes */}
         <section className="all-recipes-section">
           <h2>All Recipes</h2>
+
           {filteredRecipes.length === 0 ? (
             <p className="no-results">No recipes match your search.</p>
           ) : (
@@ -89,9 +99,9 @@ function App() {
               {filteredRecipes.map((recipe) => (
                 <RecipeCard
                   key={recipe.id}
-                  {...recipe}
+                  recipe={recipe}
+                  toggleFavorite={toggleFavorite}
                   isFavorite={favorites.some((fav) => fav.id === recipe.id)}
-                  onFavoriteClick={() => toggleFavorite(recipe)}
                 />
               ))}
             </div>
